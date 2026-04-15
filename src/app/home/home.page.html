@@ -1,0 +1,347 @@
+<ion-header translucent>
+  <ion-toolbar class="toolbar-gradient">
+    <ion-title>SmallBiz Ledger</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" color="light" (click)="toggleDarkMode()">
+        <ion-icon [name]="darkMode ? 'moon' : 'sunny'" slot="start"></ion-icon>
+        {{ darkMode ? 'Dark' : 'Light' }}
+      </ion-button>
+      <ion-button fill="outline" color="light" (click)="exportToExcel()">
+        <ion-icon name="document-text-outline" slot="start"></ion-icon>
+        Export
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="home-content">
+  <section class="hero-card">
+    <div class="hero-copy">
+      <h1>Manage your cash flow with confidence</h1>
+      <p>Track income, expenses, and category performance in one beautiful ledger.</p>
+    </div>
+    <div class="hero-actions">
+      <ion-button size="small" fill="solid" color="secondary" (click)="exportToExcel()">
+        <ion-icon name="download-outline" slot="start"></ion-icon>
+        Export report
+      </ion-button>
+    </div>
+  </section>
+
+  <ion-card class="filter-card">
+    <ion-card-header>
+      <ion-card-title>Search and filter</ion-card-title>
+      <ion-card-subtitle>Find the transactions you need instantly.</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-searchbar
+        placeholder="Search description or category"
+        [(ngModel)]="searchText"
+        (ionInput)="applyFilter()"
+      ></ion-searchbar>
+
+      <ion-row class="preset-row">
+        <ion-col size="6" size-sm="3" *ngFor="let preset of datePresets">
+          <ion-button
+            expand="full"
+            fill="outline"
+            [color]="selectedPeriod === preset.value ? 'primary' : 'medium'"
+            (click)="applyDatePreset(preset.value)"
+          >
+            {{ preset.label }}
+          </ion-button>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col>
+          <ion-button fill="clear" color="medium" expand="full" (click)="resetFilters()">
+            <ion-icon name="refresh-outline" slot="start"></ion-icon>
+            Reset filters
+          </ion-button>
+        </ion-col>
+      </ion-row>
+
+      <ion-row>
+        <ion-col size="6">
+          <ion-item>
+            <ion-label position="stacked">Start Date</ion-label>
+            <ion-datetime
+              locale="en-US"
+              [(ngModel)]="startDate"
+              (ionChange)="onDateRangeChange()"
+              presentation="date"
+            ></ion-datetime>
+          </ion-item>
+        </ion-col>
+        <ion-col size="6">
+          <ion-item>
+            <ion-label position="stacked">End Date</ion-label>
+            <ion-datetime
+              locale="en-US"
+              [(ngModel)]="endDate"
+              (ionChange)="onDateRangeChange()"
+              presentation="date"
+            ></ion-datetime>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-row class="summary-row">
+    <ion-col size="12" size-md="4">
+      <ion-card class="summary-card income-card">
+        <ion-card-content>
+          <div class="value-label">Income</div>
+          <div class="value-amount">${{ totalIncome.toFixed(2) }}</div>
+          <div class="value-note">Total incoming revenue</div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+    <ion-col size="12" size-md="4">
+      <ion-card class="summary-card expense-card">
+        <ion-card-content>
+          <div class="value-label">Expense</div>
+          <div class="value-amount">${{ totalExpense.toFixed(2) }}</div>
+          <div class="value-note">Total outgoing spending</div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+    <ion-col size="12" size-md="4">
+      <ion-card class="summary-card balance-card">
+        <ion-card-content>
+          <div class="value-label">Balance</div>
+          <div class="value-amount">${{ netBalance.toFixed(2) }}</div>
+          <div class="value-note">Current net cash flow</div>
+        </ion-card-content>
+      </ion-card>
+    </ion-col>
+  </ion-row>
+
+  <ion-card class="category-card">
+    <ion-card-header>
+      <ion-card-title>Top categories</ion-card-title>
+      <ion-card-subtitle>Category performance from the current view</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="none">
+        <ion-item *ngFor="let cat of categoryTotals">
+          <ion-label>
+            <h3>{{ cat.category }}</h3>
+            <p>{{ cat.total >= 0 ? 'Positive flow' : 'Net expense' }}</p>
+          </ion-label>
+          <ion-badge [color]="cat.total >= 0 ? 'success' : 'danger'">
+            {{ cat.total >= 0 ? '+' : '-' }}${{ getAbsolute(cat.total).toFixed(2) }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card class="report-card">
+    <ion-card-header>
+      <ion-card-title>Transaction reports</ion-card-title>
+      <ion-card-subtitle>Visual insights for your business cash flow</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="chart-section">
+        <div class="chart-panel">
+          <h3>Monthly Trend</h3>
+          <div class="trend-chart">
+            <div class="trend-row" *ngFor="let month of monthlyTotals">
+              <span class="trend-month">{{ month.month }}</span>
+              <div class="trend-bars">
+                <div class="trend-bar income-bar" [style.width.%]="getBarPercent(month.income, getMonthlyMax())"></div>
+                <div class="trend-bar expense-bar" [style.width.%]="getBarPercent(month.expense, getMonthlyMax())"></div>
+              </div>
+              <span class="trend-value">+{{ month.income | number:'1.0-0' }} / -{{ month.expense | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="chart-panel">
+          <h3>Category breakdown</h3>
+          <div class="category-bars">
+            <div class="category-row" *ngFor="let cat of categoryTotals">
+              <span>{{ cat.category }}</span>
+              <div class="category-meter">
+                <div class="category-fill" [style.width.%]="getBarPercent(cat.total, getCategoryMax())"></div>
+              </div>
+              <span class="category-value">${{ getAbsolute(cat.total).toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card class="recurring-card">
+    <ion-card-header>
+      <ion-card-title>Recurring schedules</ion-card-title>
+      <ion-card-subtitle>Recurring transactions are generated automatically.</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="none" *ngIf="upcomingRecurring.length > 0">
+        <ion-item *ngFor="let schedule of upcomingRecurring">
+          <ion-label>
+            <h3>{{ schedule.description }}</h3>
+            <p>{{ schedule.recurrence | titlecase }} • Next due {{ formatDate(schedule.nextDate) }}</p>
+          </ion-label>
+          <ion-badge [color]="schedule.type === 'income' ? 'success' : 'danger'">
+            {{ schedule.type | titlecase }}
+          </ion-badge>
+          <ion-button fill="clear" color="danger" size="small" (click)="deleteRecurringSchedule(schedule.id)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-list>
+      <div *ngIf="upcomingRecurring.length === 0" class="ion-text-center">
+        <p>No recurring schedules yet.</p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card class="transaction-card">
+    <ion-card-header>
+      <ion-card-title>Add transaction</ion-card-title>
+      <ion-card-subtitle>Record income or expense quickly.</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-segment [(ngModel)]="newTransaction.type">
+        <ion-segment-button value="income">
+          <ion-label>Income</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="expense">
+          <ion-label>Expense</ion-label>
+        </ion-segment-button>
+      </ion-segment>
+
+      <ion-item>
+        <ion-label position="stacked">Amount</ion-label>
+        <ion-input type="number" [(ngModel)]="newTransaction.amount"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Date</ion-label>
+        <ion-datetime locale="en-US" [(ngModel)]="newTransaction.date" presentation="date"></ion-datetime>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Category</ion-label>
+        <ion-select [(ngModel)]="newTransaction.category">
+          <ion-select-option *ngFor="let cat of categories" [value]="cat">
+            {{ cat }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Description</ion-label>
+        <ion-input [(ngModel)]="newTransaction.description"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">Recurring</ion-label>
+        <ion-select [(ngModel)]="newTransaction.recurrence">
+          <ion-select-option *ngFor="let option of recurrenceOptions" [value]="option.value">
+            {{ option.label }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-button expand="block" color="primary" (click)="addTransaction()" class="ion-margin-top" [disabled]="!dbReady || isLoading">
+        <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+        Add Transaction
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card class="list-card">
+    <ion-card-header>
+      <ion-card-title>Transactions</ion-card-title>
+      <ion-card-subtitle>{{ filteredTransactions.length }} transaction(s) found</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list *ngIf="!isLoading" lines="none" class="transaction-list">
+        <ion-item *ngFor="let transaction of filteredTransactions" class="transaction-item">
+          <ion-label>
+            <h2>{{ transaction.description }}</h2>
+            <p>{{ formatDate(transaction.date) }} • {{ transaction.category }}</p>
+          </ion-label>
+          <ion-chip [color]="transaction.type === 'income' ? 'success' : 'danger'">
+            {{ transaction.type | titlecase }}
+          </ion-chip>
+          <div class="transaction-value">
+            <span [class.income]="transaction.type === 'income'" [class.expense]="transaction.type === 'expense'">
+              {{ transaction.type === 'income' ? '+' : '-' }}${{ transaction.amount.toFixed(2) }}
+            </span>
+          </div>
+          <ion-button fill="clear" size="small" (click)="editTransaction(transaction)">
+            <ion-icon name="create-outline"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" color="danger" size="small" (click)="deleteTransaction(transaction.id)">
+            <ion-icon name="trash-outline"></ion-icon>
+          </ion-button>
+        </ion-item>
+
+        <ion-item *ngIf="filteredTransactions.length === 0">
+          <ion-label class="no-results">
+            <h3>No transactions found</h3>
+            <p>Try adjusting your search or date filters.</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+
+      <div *ngIf="isLoading" class="ion-text-center loading-state">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Loading transactions...</p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-modal [isOpen]="editingTransaction !== null" (didDismiss)="cancelEdit()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Edit Transaction</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cancelEdit()">Close</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding" *ngIf="editingTransaction">
+        <ion-segment [(ngModel)]="editingTransaction.type">
+          <ion-segment-button value="income">
+            <ion-label>Income</ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="expense">
+            <ion-label>Expense</ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <ion-item>
+          <ion-label position="stacked">Amount</ion-label>
+          <ion-input type="number" [(ngModel)]="editingTransaction.amount"></ion-input>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Category</ion-label>
+          <ion-select [(ngModel)]="editingTransaction.category">
+            <ion-select-option *ngFor="let cat of categories" [value]="cat">
+              {{ cat }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item>
+          <ion-label position="stacked">Description</ion-label>
+          <ion-input [(ngModel)]="editingTransaction.description"></ion-input>
+        </ion-item>
+
+        <ion-button expand="block" color="primary" (click)="updateTransaction()" class="ion-margin-top">
+          Update Transaction
+        </ion-button>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

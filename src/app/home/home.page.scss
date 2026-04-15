@@ -1,0 +1,299 @@
+.home-content {
+  --background: linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%);
+  background: var(--background);
+  min-height: 100%;
+}
+
+.toolbar-gradient {
+  --background: linear-gradient(135deg, #4b4b9d, #6551b6);
+  --color: #ffffff;
+}
+
+.hero-card,
+.filter-card,
+.summary-card,
+.category-card,
+.transaction-card,
+.list-card {
+  margin: 18px 16px 0;
+  border-radius: 24px;
+  box-shadow: 0 24px 54px rgba(47, 63, 108, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.hero-card {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #4b4b9d, #7f5ce4);
+  color: #ffffff;
+}
+
+.hero-copy h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+.hero-copy p {
+  margin: 12px 0 0;
+  max-width: 520px;
+  opacity: 0.92;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin-top: 16px;
+}
+
+@media (min-width: 760px) {
+  .hero-actions {
+    width: auto;
+    margin-top: 0;
+  }
+}
+
+.filter-card ion-searchbar {
+  --border-radius: 18px;
+  --background: #f5f7ff;
+  margin-bottom: 14px;
+}
+
+.preset-row ion-button {
+  font-size: 0.82rem;
+  height: 42px;
+}
+
+.summary-row {
+  margin-bottom: 0;
+}
+
+.summary-card {
+  min-height: 140px;
+  padding: 20px 18px;
+}
+
+.summary-card ion-card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+
+.value-label {
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.value-amount {
+  font-size: 1.85rem;
+  font-weight: 700;
+  margin-top: 6px;
+}
+
+.value-note {
+  font-size: 0.95rem;
+  color: var(--ion-color-medium);
+}
+
+.income-card {
+  border-left: 6px solid var(--ion-color-success);
+}
+
+.expense-card {
+  border-left: 6px solid var(--ion-color-danger);
+}
+
+.balance-card {
+  border-left: 6px solid var(--ion-color-primary);
+}
+
+.category-card ion-item,
+.transaction-card ion-item,
+.list-card ion-item {
+  --background: rgba(245, 246, 255, 0.85);
+  border-radius: 16px;
+  margin-bottom: 10px;
+}
+
+.transaction-card ion-item:last-child,
+.category-card ion-item:last-child {
+  margin-bottom: 0;
+}
+
+.transaction-list {
+  margin-top: 14px;
+}
+
+.transaction-item {
+  border-radius: 18px;
+  padding: 16px 14px;
+  align-items: center;
+}
+
+.transaction-item ion-label h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.transaction-item ion-label p {
+  margin: 4px 0 0;
+  color: var(--ion-color-medium);
+  font-size: 0.88rem;
+}
+
+.transaction-value {
+  min-width: 110px;
+  text-align: right;
+  margin-right: 8px;
+}
+
+.transaction-value span {
+  font-weight: 700;
+}
+
+.transaction-value span.income {
+  color: var(--ion-color-success);
+}
+
+.transaction-value span.expense {
+  color: var(--ion-color-danger);
+}
+
+.no-results {
+  width: 100%;
+  text-align: center;
+}
+
+.loading-state {
+  padding: 28px 0;
+}
+
+ion-badge {
+  font-weight: 600;
+  border-radius: 14px;
+  padding: 10px 14px;
+}
+
+ion-chip {
+  margin-left: 10px;
+}
+
+ion-modal {
+  --border-radius: 24px 24px 0 0;
+}
+
+.report-card,
+.recurring-card {
+  margin: 18px 16px 0;
+  border-radius: 24px;
+  box-shadow: 0 24px 54px rgba(47, 63, 108, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.chart-section {
+  display: grid;
+  gap: 18px;
+}
+
+.chart-panel {
+  padding: 12px 0;
+}
+
+.trend-chart,
+.category-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.trend-row,
+.category-row {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.trend-month,
+.category-row span:first-child {
+  font-weight: 600;
+  color: var(--ion-color-dark);
+}
+
+.trend-bars,
+.category-meter {
+  height: 12px;
+  background: rgba(95, 75, 184, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+}
+
+.trend-bar {
+  height: 100%;
+}
+
+.income-bar {
+  background: #20c997;
+  min-width: 4%;
+}
+
+.expense-bar {
+  background: #ff6b6b;
+  min-width: 4%;
+}
+
+.category-fill {
+  height: 100%;
+  background: #6551b6;
+  min-width: 4%;
+}
+
+.trend-value,
+.category-value {
+  font-size: 0.88rem;
+  color: var(--ion-color-medium);
+  white-space: nowrap;
+}
+
+.recurring-card ion-item {
+  --background: rgba(245, 246, 255, 0.92);
+  border-radius: 16px;
+  margin-bottom: 10px;
+}
+
+.recurring-card ion-item:last-child {
+  margin-bottom: 0;
+}
+
+.recurring-card ion-badge {
+  font-weight: 600;
+}
+
+ion-datetime,
+ion-select,
+ion-input {
+  --background: #f7f9ff;
+  border-radius: 14px;
+}
+
+ion-segment {
+  --background: #f5f7ff;
+  border-radius: 18px;
+  margin-bottom: 16px;
+}
+
+ion-button {
+  --border-radius: 16px;
+}
+
