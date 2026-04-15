@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { documentTextOutline, downloadOutline, refreshOutline, addCircleOutline, sunny, moon, createOutline, trashOutline } from 'ionicons/icons';
 import { DatabaseService } from '../services/database.service';
 import {
   Transaction,
@@ -11,6 +13,17 @@ import {
   RecurringTransaction,
 } from '../models/transaction.model';
 import * as XLSX from 'xlsx';
+
+addIcons({
+  'document-text-outline': documentTextOutline,
+  'download-outline': downloadOutline,
+  'refresh-outline': refreshOutline,
+  'add-circle-outline': addCircleOutline,
+  'sunny': sunny,
+  'moon': moon,
+  'create-outline': createOutline,
+  'trash-outline': trashOutline,
+});
 
 @Component({
   selector: 'app-home',
@@ -38,7 +51,6 @@ export class HomePage implements OnInit {
   
   startDate: string = '';
   endDate: string = '';
-  isLoading = true;
   dbReady = false;
   editingTransaction: Transaction | null = null;
   categories = CATEGORIES;
@@ -69,21 +81,25 @@ export class HomePage implements OnInit {
     this.darkMode = localStorage.getItem('ledgerDarkMode') === 'true';
     document.body.classList.toggle('dark-theme', this.darkMode);
 
-    await this.dbService.initializeDatabase();
-    this.dbReady = true;
-    await this.loadRecurringSchedules();
-    await this.loadTransactions();
+    try {
+      console.log('Initializing database...');
+      await this.dbService.initializeDatabase();
+      this.dbReady = true;
+      console.log('Database ready, loading data...');
+      await this.loadRecurringSchedules();
+      await this.loadTransactions();
+    } catch (error) {
+      console.error('Error in ngOnInit:', error);
+      this.showToast('Failed to initialize database. Please refresh the page.', 'danger');
+    }
   }
 
   async loadTransactions() {
     try {
-      this.isLoading = true;
       this.transactions = await this.dbService.getAllTransactions();
       await this.applyFilter();
     } catch (error) {
       this.showToast('Error loading transactions', 'danger');
-    } finally {
-      this.isLoading = false;
     }
   }
 
@@ -251,25 +267,39 @@ export class HomePage implements OnInit {
   }
 
   async addTransaction() {
+    console.log('addTransaction called', this.newTransaction);
+
     if (!this.dbReady) {
+      console.log('Database not ready, initializing...');
       this.showToast('Please wait while the database initializes', 'warning');
-      await this.dbService.initializeDatabase();
-      this.dbReady = true;
+      try {
+        await this.dbService.initializeDatabase();
+        this.dbReady = true;
+      } catch (error) {
+        console.error('Failed to initialize database:', error);
+        this.showToast('Failed to initialize database', 'danger');
+        return;
+      }
     }
 
     if (!this.newTransaction.description?.trim()) {
+      console.log('Description is empty');
       this.showToast('Please enter a description', 'warning');
       return;
     }
 
     const amount = Number(this.newTransaction.amount);
+    console.log('Amount:', amount);
     if (isNaN(amount) || amount <= 0) {
+      console.log('Invalid amount');
       this.showToast('Amount must be a number greater than 0', 'warning');
       return;
     }
 
     const dateValue = new Date(this.newTransaction.date).getTime();
+    console.log('Date value:', dateValue);
     if (isNaN(dateValue)) {
+      console.log('Invalid date');
       this.showToast('Please select a valid date', 'warning');
       return;
     }
@@ -284,6 +314,7 @@ export class HomePage implements OnInit {
       };
       console.log('Adding transaction', transaction);
       await this.dbService.addTransaction(transaction);
+      this.showToast('Transaction added successfully', 'success');
 
       if (this.newTransaction.recurrence && this.newTransaction.recurrence !== 'none') {
         const recurrenceValue = this.newTransaction.recurrence as RecurrenceType;

@@ -249,7 +249,7 @@
         </ion-select>
       </ion-item>
 
-      <ion-button expand="block" color="primary" (click)="addTransaction()" class="ion-margin-top" [disabled]="!dbReady || isLoading">
+      <ion-button expand="block" color="primary" (click)="addTransaction()" class="ion-margin-top">
         <ion-icon name="add-circle-outline" slot="start"></ion-icon>
         Add Transaction
       </ion-button>
@@ -262,7 +262,7 @@
       <ion-card-subtitle>{{ filteredTransactions.length }} transaction(s) found</ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
-      <ion-list *ngIf="!isLoading" lines="none" class="transaction-list">
+      <ion-list lines="none" class="transaction-list">
         <ion-item *ngFor="let transaction of filteredTransactions" class="transaction-item">
           <ion-label>
             <h2>{{ transaction.description }}</h2>
@@ -291,11 +291,6 @@
           </ion-label>
         </ion-item>
       </ion-list>
-
-      <div *ngIf="isLoading" class="ion-text-center loading-state">
-        <ion-spinner name="crescent"></ion-spinner>
-        <p>Loading transactions...</p>
-      </div>
     </ion-card-content>
   </ion-card>
 

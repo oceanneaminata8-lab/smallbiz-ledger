@@ -6,6 +6,7 @@ import {
   SQLiteDBConnection,
 } from '@capacitor-community/sqlite';
 import { Transaction, RecurringTransaction } from '../models/transaction.model';
+import { IndexedDBService } from './indexeddb.service';
 
 @Injectable({
   providedIn: 'root',
@@ -14,37 +15,65 @@ export class DatabaseService {
   private sqlite: SQLiteConnection;
   private db: SQLiteDBConnection | null = null;
   private isInitialized = false;
+  private useIndexedDB = false;
+  private indexedDBService: IndexedDBService;
 
   constructor() {
     this.sqlite = new SQLiteConnection(CapacitorSQLite);
+    this.indexedDBService = new IndexedDBService();
+    this.useIndexedDB = Capacitor.getPlatform() === 'web';
   }
 
-  async initializeDatabase(): Promise<void> {
-    if (this.isInitialized) return;
+  async initializeDatabase(force: boolean = false): Promise<void> {
+    if (this.isInitialized && !force) return;
 
     try {
-      if (Capacitor.getPlatform() === 'web') {
-        await this.sqlite.initWebStore();
-        await this.sqlite.checkConnectionsConsistency();
+      console.log('Platform:', Capacitor.getPlatform());
+      console.log('Using IndexedDB:', this.useIndexedDB);
+
+      if (this.useIndexedDB) {
+        // Use IndexedDB for web
+        await this.indexedDBService.initializeDatabase();
+      } else {
+        // Use SQLite for mobile
+        if (Capacitor.getPlatform() === 'web') {
+          console.log('Initializing web store...');
+          try {
+            await this.sqlite.initWebStore();
+            await this.sqlite.checkConnectionsConsistency();
+            console.log('Web store initialized');
+          } catch (webError) {
+            console.error('Web store initialization failed:', webError);
+            // Don't throw, try to continue without web store
+          }
+        }
+
+        // Create or open database
+        console.log('Creating database connection...');
+        this.db = await this.sqlite.createConnection(
+          'smallbiz_ledger',
+          false,
+          'no-encryption',
+          1,
+          false
+        );
+
+        console.log('Opening database...');
+        await this.db.open();
+        
+        console.log('Creating tables...');
+        await this.createTables();
+        
+        console.log('Generating recurring transactions...');
+        await this.generateRecurringTransactions();
       }
-
-      // Create or open database
-      this.db = await this.sqlite.createConnection(
-        'smallbiz_ledger',
-        false,
-        'no-encryption',
-        1,
-        false
-      );
-
-      await this.db.open();
-      await this.createTables();
-      await this.generateRecurringTransactions();
+      
       this.isInitialized = true;
       console.log('Database initialized successfully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error initializing database:', error);
-      throw error;
+      this.isInitialized = false;
+      throw new Error(`Database initialization failed: ${error.message || 'Unknown error'}`);
     }
   }
 
@@ -81,6 +110,11 @@ export class DatabaseService {
   // INSERT transaction
   async addTransaction(transaction: Omit<Transaction, 'id'>): Promise<number> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.addTransaction(transaction);
+    }
+    
     const query = `
       INSERT INTO transactions (type, amount, date, description, category)
       VALUES (?, ?, ?, ?, ?)
@@ -106,6 +140,11 @@ export class DatabaseService {
   // SELECT all transactions
   async getAllTransactions(): Promise<Transaction[]> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.getAllTransactions();
+    }
+    
     const query = 'SELECT * FROM transactions ORDER BY date DESC';
     
     try {
@@ -120,6 +159,11 @@ export class DatabaseService {
   // SELECT by date range (BETWEEN query)
   async getTransactionsByDateRange(startDate: number, endDate: number): Promise<Transaction[]> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.getTransactionsByDateRange(startDate, endDate);
+    }
+    
     const query = `
       SELECT * FROM transactions 
       WHERE date BETWEEN ? AND ?
@@ -137,6 +181,11 @@ export class DatabaseService {
 
   async addRecurringTransaction(recurring: Omit<RecurringTransaction, 'id'>): Promise<number> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.addRecurringTransaction(recurring);
+    }
+    
     const query = `
       INSERT INTO recurring_transactions (type, amount, start_date, next_date, description, category, recurrence)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -163,6 +212,11 @@ export class DatabaseService {
 
   async getAllRecurringTransactions(): Promise<RecurringTransaction[]> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.getAllRecurringTransactions();
+    }
+    
     const query = 'SELECT * FROM recurring_transactions ORDER BY next_date ASC';
 
     try {
@@ -176,6 +230,11 @@ export class DatabaseService {
 
   async deleteRecurringTransaction(id: number): Promise<void> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.deleteRecurringTransaction(id);
+    }
+    
     const query = 'DELETE FROM recurring_transactions WHERE id = ?';
 
     try {
@@ -189,6 +248,11 @@ export class DatabaseService {
 
   async generateRecurringTransactions(): Promise<void> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.generateRecurringTransactions();
+    }
+    
     const now = Date.now();
     const recurringItems = await this.getAllRecurringTransactions();
 
@@ -240,6 +304,11 @@ export class DatabaseService {
   // DELETE transaction
   async deleteTransaction(id: number): Promise<void> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.deleteTransaction(id);
+    }
+    
     const query = 'DELETE FROM transactions WHERE id = ?';
     
     try {
@@ -254,6 +323,11 @@ export class DatabaseService {
   // UPDATE transaction
   async updateTransaction(transaction: Transaction): Promise<void> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.updateTransaction(transaction);
+    }
+    
     const query = `
       UPDATE transactions 
       SET type = ?, amount = ?, date = ?, description = ?, category = ?
@@ -280,6 +354,11 @@ export class DatabaseService {
   // Get summary statistics
   async getSummary(startDate: number, endDate: number): Promise<any> {
     this.ensureInitialized();
+    
+    if (this.useIndexedDB) {
+      return this.indexedDBService.getSummary(startDate, endDate);
+    }
+    
     const query = `
       SELECT 
         SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
@@ -300,8 +379,11 @@ export class DatabaseService {
   }
 
   private ensureInitialized(): void {
-    if (!this.isInitialized || !this.db) {
+    if (!this.isInitialized) {
       throw new Error('Database not initialized. Call initializeDatabase() first.');
+    }
+    if (!this.useIndexedDB && !this.db) {
+      throw new Error('SQLite database not initialized.');
     }
   }
 }
